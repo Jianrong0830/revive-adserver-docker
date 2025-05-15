@@ -1,40 +1,35 @@
 version: '2'
 
 services:
-
   app:
+    platform: linux/amd64  # ✅ 指定平台，避免 arm64 問題
     build:
       context: .
       dockerfile: .docker/Dockerfile
-    # image: ghcr.io/codions/revive-adserver/revive-adserver:latest
     restart: unless-stopped
     depends_on:
-      - mysql
+      - mailpit
 
     volumes:
       - ./.docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./.docker/storage/app/www/images:/usr/share/nginx/html/www/images
 
     ports:
-      - "8080:80"
-    links:
-      - mysql
-      - mailpit
+      - "80:80"  # ✅ Zeabur 預設監聽 80
 
-  mysql:
-    image: mysql:5.7
-    restart: unless-stopped
-    ports:
-      - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=secret
-      - MYSQL_DATABASE=revive
-      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
-    volumes:
-      - ./.docker/storage/mysql:/var/lib/mysql
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+    links:
+      - mailpit
 
   mailpit:
     image: axllent/mailpit:latest
+    platform: linux/amd64
     restart: always
     ports:
       - '1025:1025'
